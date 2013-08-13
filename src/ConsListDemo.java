@@ -10,20 +10,21 @@ public class ConsListDemo {
     public static final Unit unit = new Unit();
   }
   abstract static class L<A> {
-    abstract <T> T fold(final F1<Unit, T> nil, final F2<A, L<A>, T> cons);
+    private L() {}
+    abstract <T> T fold(final F1<Unit, T> nil, final F2<A, T, T> cons);
     public static <A> L<A> nil() {
-      return new L<A>() {
+      return new L<A>() {  // FIX: efficiency
         @Override
-        <T> T fold(final F1<Unit, T> nil, final F2<A, L<A>, T> cons) {
-          return nil.apply(Unit.unit); // FIX: efficiency
+        <T> T fold(final F1<Unit, T> nil, final F2<A, T, T> cons) {
+          return nil.apply(Unit.unit);
         }
       };
     }
     public static <A> L<A> cons(final A a, final L<A> as) {
       return new L<A>() {
         @Override
-        <T> T fold(final F1<Unit, T> nil, final F2<A, L<A>, T> cons) {
-          return cons.apply(a, as);
+       <T> T fold(final F1<Unit, T> nil, final F2<A, T, T> cons) {
+          return cons.apply(a, as.fold(nil, cons));
         }
       };
     }
@@ -37,10 +38,10 @@ public class ConsListDemo {
             public String apply(Unit unit) {
               return "nil";
             }
-          },new F2<A, L<A>, String>() {
+          },new F2<A, String, String>() {
             @Override
-            public String apply(A a, L<A> as) {
-              return "cons(" + a.toString() /* XXX: Using Object.toString() */ + ", " + show(as) + ")";
+            public String apply(A a, String s) {
+              return "cons(" + a + ", " + s + ")";
             }
           }
       );
@@ -52,10 +53,10 @@ public class ConsListDemo {
             public Integer apply(Unit unit) {
               return 0;
             }
-          }, new F2<Integer, L<Integer>, Integer>() {
+          }, new F2<Integer, Integer, Integer>() {
             @Override
-            public Integer apply(Integer i, L<Integer> is) {
-              return i + sum(is);
+            public Integer apply(Integer i, Integer acc) {
+              return i + acc;
             }
           }
       );
